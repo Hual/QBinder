@@ -1,17 +1,21 @@
 #pragma once
 
+#define __VERSION 0x02
 #define _WIN32_WINNT 0x501
 #define TOTAL_TOKENS 17
 #define TOTAL_HOLD_TOKENS 3
-#define GetSelectedItem(listbox_hwnd) SendMessage(listbox_hwnd, (UINT)CB_GETCURSEL, (WPARAM)0, (LPARAM)0)
-#define SetSelectedItem(listbox_hwnd, index) SendMessage(listbox_hwnd, (UINT)CB_SETCURSEL, (WPARAM)index, (LPARAM)0)
-#define IsChecked(checkbox_hwnd) (bool)(SendMessage(checkbox_hwnd, BM_GETCHECK, (WPARAM)NULL, (LPARAM)NULL))
-#define SetText(hwnd, text) SendMessage(hwnd, WM_SETTEXT, (WPARAM)NULL, (LPARAM)text)
-#define GetText(hwnd, buf) SendMessage(hwnd, WM_GETTEXT, sizeof(buf), (LPARAM)buf)
-
+#define TOTAL_OTHER_TOKENS 5
 #define NORMAL_KEYS_SIZE 103
 #define TEXTBOX_SIZE 134
 #define WHITESPACE_SIZE 15
+#define _BOXES 16
+#define GetSelectedItem(listbox_hwnd) SendMessage(listbox_hwnd, (UINT)CB_GETCURSEL, (WPARAM)0, (LPARAM)0)
+#define SetSelectedItem(listbox_hwnd, index) SendMessage(listbox_hwnd, (UINT)CB_SETCURSEL, (WPARAM)index, (LPARAM)0)
+#define GetSelectedListBoxItem(listbox_hwnd) SendMessage(listbox_hwnd, (UINT)LB_GETCURSEL, (WPARAM)0, (LPARAM)0)
+#define IsChecked(checkbox_hwnd) (bool)(SendMessage(checkbox_hwnd, BM_GETCHECK, (WPARAM)NULL, (LPARAM)NULL))
+#define SetText(hwnd, text) SendMessage(hwnd, WM_SETTEXT, (WPARAM)NULL, (LPARAM)text)
+#define GetText(hwnd, buf) SendMessage(hwnd, WM_GETTEXT, sizeof(buf), (LPARAM)buf)
+#define AddString(hwnd, str) SendMessage(hwnd, LB_ADDSTRING, (WPARAM)NULL, (LPARAM)str);
 
 #include <windows.h>
 #include <stdlib.h>
@@ -21,11 +25,10 @@
 #include "resource.h"
 
 bool SimulateKeyArray(char[], size_t, INPUT*);
+void HideHelpBox(void);
 ULONG_PTR ToggleVisualStyles(void);
 LRESULT CALLBACK WindowProcedure(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK LowLevelKeyboardProc(int, WPARAM, LPARAM);
-
-const unsigned _BOXES = 16;
 
 HWND TextBox[_BOXES];
 HWND KeyComboBox[_BOXES];
@@ -33,8 +36,17 @@ HWND button[_BOXES];
 HWND checkBox[3][_BOXES];
 bool enabled[_BOXES];
 bool key_down[_BOXES];
+bool helpBoxShown = false;
+unsigned short textBoxHidden[3];
+unsigned short lastTextBox;
+int lastSize;
+HWND helpBox;
+const HBRUSH BackgroundBrush = CreateSolidBrush(RGB(236,233,216));
+const HFONT DefaultFont = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
+const HFONT HeaderFont = CreateFont(20,0,0,0,FW_DONTCARE,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_OUTLINE_PRECIS, CLIP_DEFAULT_PRECIS,ANTIALIASED_QUALITY, VARIABLE_PITCH,TEXT("Arial"));
+INPUT *keyInput = new INPUT[4];
 
-char keys_string[NORMAL_KEYS_SIZE][16] = {
+char keys_string[NORMAL_KEYS_SIZE][13] = {
     "0",
     "1",
     "2",
@@ -266,14 +278,50 @@ short tokens[TOTAL_TOKENS][2] = {
 	{'R', VK_RIGHT}
 };
 
+char tokens_desc[TOTAL_TOKENS][12] = {
+    "Return",
+    "Shift",
+    "Backspace",
+    "Tab",
+    "Control",
+    "Alt",
+    "Caps Lock",
+    "Escape",
+    "End",
+    "Page Up",
+    "Page Down",
+    "Home",
+    "Insert",
+    "Up Arrow",
+    "Down Arrow",
+    "Left Arrow",
+    "Right Arrow",
+};
+
+short other_tokens[TOTAL_OTHER_TOKENS] = {
+    'r',
+    'x',
+    'f',
+    'T',
+    'J'
+};
+
+char other_tokens_desc[TOTAL_OTHER_TOKENS][21] = {
+    "Press random key",
+    "Press the XXth key",
+    "Press the XXth F key",
+    "Echo the time",
+    "Echo the date"
+};
+
 short hold_tokens[TOTAL_TOKENS][2] = {
 	{'s', VK_SHIFT},
 	{'c', VK_CONTROL},
 	{'a', VK_MENU}
 };
 
-const HBRUSH BackgroundBrush = CreateSolidBrush(RGB(236,233,216));
-const HFONT DefaultFont = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
-const HFONT HeaderFont = CreateFont(20,0,0,0,FW_DONTCARE,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_OUTLINE_PRECIS, CLIP_DEFAULT_PRECIS,ANTIALIASED_QUALITY, VARIABLE_PITCH,TEXT("Arial"));
-
-INPUT *keyInput = new INPUT[4];
+char hold_tokens_desc[TOTAL_HOLD_TOKENS][8] = {
+    "Shift",
+    "Control",
+    "Alt"
+};

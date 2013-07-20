@@ -233,11 +233,48 @@ int WINAPI WinMain(HINSTANCE hThisInstance, HINSTANCE hPrevInstance, LPSTR lpszA
     return messages.wParam;
 }
 
+void HideHelpBox(void)
+{
+    ShowWindow(TextBox[textBoxHidden[0]], SW_SHOW);
+    ShowWindow(TextBox[textBoxHidden[1]], SW_SHOW);
+    ShowWindow(TextBox[textBoxHidden[2]], SW_SHOW);
+    ShowWindow(helpBox, SW_HIDE);
+    helpBoxShown = false;
+    return;
+}
+
 LRESULT CALLBACK LowLevelKeyboardProc(int code, WPARAM wParam, LPARAM lParam)
 {
     if(code == 0)
     {
         KBDLLHOOKSTRUCT* kbstr = (KBDLLHOOKSTRUCT*)lParam;
+        if(kbstr->vkCode == VK_ESCAPE && helpBoxShown && (int)GetActiveWindow())
+        {
+            HideHelpBox();
+            return -1;
+        }
+        else if(kbstr->vkCode == VK_RETURN && helpBoxShown && (int)GetActiveWindow() && GetFocus() == helpBox && GetSelectedItem(helpBox) > -1)
+        {
+            char chr[256];
+            int len = GetText(TextBox[lastTextBox], chr);
+            int item = (int)GetSelectedListBoxItem(helpBox);
+            if(chr[len-1] == '%')
+            {
+                if(item < TOTAL_TOKENS && len < 255) { sprintf(chr, "%s%c", chr, tokens[item][0]); ++len; }
+                else if(item >= TOTAL_TOKENS && item < TOTAL_TOKENS+(TOTAL_HOLD_TOKENS*2) && len < 254) { sprintf(chr, "%s%c%c", chr, (((item-TOTAL_TOKENS)/TOTAL_HOLD_TOKENS) ? ('!') : ('=')), hold_tokens[(item-TOTAL_TOKENS)%TOTAL_HOLD_TOKENS][0]); len+=2; }
+                else if(item >= TOTAL_TOKENS+(TOTAL_HOLD_TOKENS*2) && item < TOTAL_TOKENS+(TOTAL_HOLD_TOKENS*2)+TOTAL_OTHER_TOKENS && len < 255) { sprintf(chr, "%s%c", chr, other_tokens[item - (TOTAL_TOKENS+(TOTAL_HOLD_TOKENS*2))]); ++len; }
+            }
+            else if(chr[len-2] == '%' && (chr[len-1] == '!' || chr[len-1] == '=') && len < 255)
+            {
+                sprintf(chr, "%s%c", chr, hold_tokens[item][0]);
+                ++len;
+            }
+            SetText(TextBox[lastTextBox], chr);
+            HideHelpBox();
+            SetFocus(TextBox[lastTextBox]);
+            SendMessage(TextBox[lastTextBox],EM_SETSEL,len,len);
+            return -1;
+        }
         for(unsigned i=0;i<_BOXES;++i)
         {
             int msg = SendMessage(KeyComboBox[i], (UINT)CB_GETCURSEL, (WPARAM) 0, (LPARAM) 0);
@@ -286,9 +323,11 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         break;
         case WM_CREATE:
         {
+            helpBox = CreateWindow ("LISTBOX", "", WS_VSCROLL | WS_CHILD | WS_BORDER, 0,0,244,100, hwnd, (HMENU)3001, NULL, NULL);
+            SendMessage(helpBox, WM_SETFONT, (WPARAM)DefaultFont, MAKELPARAM(FALSE, 0));
             for(unsigned i=0;i<_BOXES;++i)
             {
-                TextBox[i] = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 10, (i*30)+55, 100+TEXTBOX_SIZE, 23, hwnd, (HMENU)IDC_MAIN_EDIT, GetModuleHandle(NULL), NULL);
+                TextBox[i] = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | ES_AUTOHSCROLL, 10, (i*30)+55, 100+TEXTBOX_SIZE, 23, hwnd, (HMENU)(IDC_MAIN_EDIT+i), GetModuleHandle(NULL), NULL);
                 SendMessage(TextBox[i], WM_SETFONT, (WPARAM)DefaultFont, MAKELPARAM(FALSE, 0));
             }
             for(unsigned i=0;i<_BOXES;++i)
@@ -332,7 +371,99 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         }
         break;
         case WM_COMMAND:
-            if(wmId >= 1000 && wmId <= 999+_BOXES)
+            if(wmId >= IDC_MAIN_EDIT && wmId < IDC_MAIN_EDIT+16)
+            {
+                if(wmEvent == 768)
+                {
+                    char buf[256];
+                    int len = GetText(TextBox[wmId-103], buf);
+                    if((len > lastSize && lastTextBox == wmId-103) || lastTextBox != wmId-103)
+                    {
+                        if(buf[strlen(buf)-1] == '%')
+                        {
+                            if(strlen(buf) > 1 && buf[strlen(buf)-2] == '%' && helpBoxShown) HideHelpBox();
+                            else {
+                                SendMessage(helpBox, LB_RESETCONTENT, 0, 0);
+                                for(unsigned i=0;i<TOTAL_TOKENS;++i)
+                                {
+                                    char buf[32];
+                                    sprintf(buf, "%%%c   -   %s", tokens[i][0], tokens_desc[i]);
+                                    AddString(helpBox, buf);
+                                }
+                                for(unsigned i=0;i<TOTAL_HOLD_TOKENS;++i)
+                                {
+                                    char _buf[32];
+                                    sprintf(_buf, "%%=%c   -   Hold %s", hold_tokens[i][0], hold_tokens_desc[i]);
+                                    AddString(helpBox, _buf);
+                                }
+                                for(unsigned i=0;i<TOTAL_HOLD_TOKENS;++i)
+                                {
+                                    char _buf[32];
+                                    sprintf(_buf, "%%!%c   -   Release %s", hold_tokens[i][0], hold_tokens_desc[i]);
+                                    AddString(helpBox, _buf);
+                                }
+                                for(unsigned i=0;i<TOTAL_OTHER_TOKENS;++i)
+                                {
+                                    char _buf[32];
+                                    sprintf(_buf, "%%%c   -   %s", other_tokens[i], other_tokens_desc[i]);
+                                    AddString(helpBox, _buf);
+                                }
+                                if(wmId-103 >= 13)
+                                {
+                                    SetWindowPos(helpBox, 0, 10, ((wmId-103)*30)+78-120, 235, 98, 0);
+                                    ShowWindow(TextBox[wmId-104], SW_HIDE);
+                                    ShowWindow(TextBox[wmId-105], SW_HIDE);
+                                    ShowWindow(TextBox[wmId-106], SW_HIDE);
+                                    textBoxHidden[0] = wmId-104;
+                                    textBoxHidden[1] = wmId-105;
+                                    textBoxHidden[2] = wmId-106;
+                                }
+                                else {
+                                    SetWindowPos(helpBox, 0, 10, ((wmId-103)*30)+78, 235, 98, 0);
+                                    ShowWindow(TextBox[wmId-102], SW_HIDE);
+                                    ShowWindow(TextBox[wmId-101], SW_HIDE);
+                                    ShowWindow(TextBox[wmId-100], SW_HIDE);
+                                    textBoxHidden[0] = wmId-102;
+                                    textBoxHidden[1] = wmId-101;
+                                    textBoxHidden[2] = wmId-100;
+                                }
+                                ShowWindow(helpBox, SW_SHOW);
+                                helpBoxShown = true;
+                            }
+                        }
+                        else if(strlen(buf) > 1 && buf[strlen(buf)-2] == '%' && helpBoxShown)
+                        {
+                            if(buf[strlen(buf)-1] == '=' || buf[strlen(buf)-1] == '!')
+                            {
+                                SendMessage(helpBox, LB_RESETCONTENT, 0, 0);
+                                for(unsigned i=0;i<TOTAL_HOLD_TOKENS;++i)
+                                {
+                                    char _buf[32];
+                                    sprintf(_buf, "%%%c%c", buf[strlen(buf)-1], hold_tokens[i][0]);
+                                    AddString(helpBox, _buf);
+                                }
+                            }
+                            else
+                                HideHelpBox();
+                                SetFocus(TextBox[lastTextBox]);
+                        }
+                    }
+                    else if(helpBoxShown)
+                    {
+                        HideHelpBox();
+                    }
+                    lastSize = len;
+                }
+                else if(wmEvent == 512)
+                {
+                    lastTextBox =wmId-103;
+                }
+                else if(wmEvent == 256 && helpBoxShown && lastTextBox != wmId-103)
+                {
+                    HideHelpBox();
+                }
+            }
+            else if(wmId >= 1000 && wmId <= 999+_BOXES)
             {
                 if(enabled[wmId-1000])
                 {
