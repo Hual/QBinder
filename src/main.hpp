@@ -21,7 +21,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
-#include <pthread.h>
 #include "resource.h"
 
 bool SimulateKeyArray(char[], size_t, INPUT*);
