@@ -209,11 +209,12 @@ int WINAPI WinMain(HINSTANCE hThisInstance, HINSTANCE hPrevInstance, LPSTR lpszA
     MSG messages;
     WNDCLASSEX wincl;
     SetWindowsHookEx(WH_KEYBOARD_LL, LowLevelKeyboardProc, NULL, 0);
+    SetWindowsHookEx(WH_MOUSE_LL, LowLevelMouseProc, NULL, 0);
     ToggleVisualStyles();
     wincl.hInstance = hThisInstance;
     wincl.lpszClassName = "QbinderApp";
     wincl.lpfnWndProc = WindowProcedure;
-    wincl.style = CS_DBLCLKS;
+    wincl.style = CS_DBLCLKS | CS_HREDRAW | CS_VREDRAW;
     wincl.cbSize = sizeof(WNDCLASSEX);
     wincl.hIcon = LoadIcon(hThisInstance, MAKEINTRESOURCE(IDI_ICON));
     wincl.hIconSm = LoadIcon(hThisInstance, MAKEINTRESOURCE(IDI_ICON));
@@ -243,6 +244,48 @@ void HideHelpBox(void)
     return;
 }
 
+void UpdateText(void)
+{
+    char chr[256];
+    int len = GetText(TextBox[lastTextBox], chr);
+    int item = (int)GetSelectedListBoxItem(helpBox);
+    if(chr[len-1] == '%')
+    {
+        if(item < TOTAL_TOKENS && len < 255) { sprintf(chr, "%s%c", chr, tokens[item][0]); ++len; }
+        else if(item >= TOTAL_TOKENS && item < TOTAL_TOKENS+(TOTAL_HOLD_TOKENS*2) && len < 254) { sprintf(chr, "%s%c%c", chr, (((item-TOTAL_TOKENS)/TOTAL_HOLD_TOKENS) ? ('!') : ('=')), hold_tokens[(item-TOTAL_TOKENS)%TOTAL_HOLD_TOKENS][0]); len+=2; }
+        else if(item >= TOTAL_TOKENS+(TOTAL_HOLD_TOKENS*2) && item < TOTAL_TOKENS+(TOTAL_HOLD_TOKENS*2)+TOTAL_OTHER_TOKENS && len < 255) { sprintf(chr, "%s%c", chr, other_tokens[item - (TOTAL_TOKENS+(TOTAL_HOLD_TOKENS*2))]); ++len; }
+    }
+    else if(chr[len-2] == '%' && (chr[len-1] == '!' || chr[len-1] == '=') && len < 255)
+    {
+        sprintf(chr, "%s%c", chr, hold_tokens[item][0]);
+        ++len;
+    }
+    SetText(TextBox[lastTextBox], chr);
+    HideHelpBox();
+    SetFocus(TextBox[lastTextBox]);
+    SendMessage(TextBox[lastTextBox],EM_SETSEL,len,len);
+    return;
+}
+
+LRESULT CALLBACK LowLevelMouseProc(int code, WPARAM wParam, LPARAM lParam)
+{
+    if(code == 0)
+    {
+        int item = GetSelectedItem(helpBox);
+        if(wParam == WM_LBUTTONDOWN && helpBoxShown && (int)GetActiveWindow() && GetFocus() == helpBox && item > -1)
+        {
+            MSLLHOOKSTRUCT* mhs = (MSLLHOOKSTRUCT*)lParam;
+            if((mhs->time)-lastMousePress <= 500 && lastItem == item)
+            {
+                UpdateText();
+            }
+            lastMousePress = mhs->time;
+            lastItem = item;
+        }
+    }
+    return 0;
+}
+
 LRESULT CALLBACK LowLevelKeyboardProc(int code, WPARAM wParam, LPARAM lParam)
 {
     if(code == 0)
@@ -255,24 +298,7 @@ LRESULT CALLBACK LowLevelKeyboardProc(int code, WPARAM wParam, LPARAM lParam)
         }
         else if(kbstr->vkCode == VK_RETURN && helpBoxShown && (int)GetActiveWindow() && GetFocus() == helpBox && GetSelectedItem(helpBox) > -1)
         {
-            char chr[256];
-            int len = GetText(TextBox[lastTextBox], chr);
-            int item = (int)GetSelectedListBoxItem(helpBox);
-            if(chr[len-1] == '%')
-            {
-                if(item < TOTAL_TOKENS && len < 255) { sprintf(chr, "%s%c", chr, tokens[item][0]); ++len; }
-                else if(item >= TOTAL_TOKENS && item < TOTAL_TOKENS+(TOTAL_HOLD_TOKENS*2) && len < 254) { sprintf(chr, "%s%c%c", chr, (((item-TOTAL_TOKENS)/TOTAL_HOLD_TOKENS) ? ('!') : ('=')), hold_tokens[(item-TOTAL_TOKENS)%TOTAL_HOLD_TOKENS][0]); len+=2; }
-                else if(item >= TOTAL_TOKENS+(TOTAL_HOLD_TOKENS*2) && item < TOTAL_TOKENS+(TOTAL_HOLD_TOKENS*2)+TOTAL_OTHER_TOKENS && len < 255) { sprintf(chr, "%s%c", chr, other_tokens[item - (TOTAL_TOKENS+(TOTAL_HOLD_TOKENS*2))]); ++len; }
-            }
-            else if(chr[len-2] == '%' && (chr[len-1] == '!' || chr[len-1] == '=') && len < 255)
-            {
-                sprintf(chr, "%s%c", chr, hold_tokens[item][0]);
-                ++len;
-            }
-            SetText(TextBox[lastTextBox], chr);
-            HideHelpBox();
-            SetFocus(TextBox[lastTextBox]);
-            SendMessage(TextBox[lastTextBox],EM_SETSEL,len,len);
+            UpdateText();
             return -1;
         }
         for(unsigned i=0;i<_BOXES;++i)
@@ -323,7 +349,7 @@ LRESULT CALLBACK WindowProcedure(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
         break;
         case WM_CREATE:
         {
-            helpBox = CreateWindow ("LISTBOX", "", WS_VSCROLL | WS_CHILD | WS_BORDER, 0,0,244,100, hwnd, (HMENU)3001, NULL, NULL);
+            helpBox = CreateWindow ("LISTBOX", "", WS_CHILD | WS_VSCROLL | WS_BORDER, 0,0,244,100, hwnd, (HMENU)3001, NULL, NULL);
             SendMessage(helpBox, WM_SETFONT, (WPARAM)DefaultFont, MAKELPARAM(FALSE, 0));
             for(unsigned i=0;i<_BOXES;++i)
             {

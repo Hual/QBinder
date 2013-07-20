@@ -1,7 +1,9 @@
 #pragma once
 
-#define __VERSION 0x02
-#define _WIN32_WINNT 0x501
+#define __VERSION 0x03
+#define _WIN32_WINNT 0x0501
+#define WINVER 0x0501
+#define _WIN32_WINDOWS 0x0501
 #define TOTAL_TOKENS 17
 #define TOTAL_HOLD_TOKENS 3
 #define TOTAL_OTHER_TOKENS 5
@@ -25,9 +27,11 @@
 
 bool SimulateKeyArray(char[], size_t, INPUT*);
 void HideHelpBox(void);
+void UpdateText(void);
 ULONG_PTR ToggleVisualStyles(void);
 LRESULT CALLBACK WindowProcedure(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK LowLevelKeyboardProc(int, WPARAM, LPARAM);
+LRESULT CALLBACK LowLevelMouseProc(int, WPARAM, LPARAM);
 
 HWND TextBox[_BOXES];
 HWND KeyComboBox[_BOXES];
@@ -36,14 +40,15 @@ HWND checkBox[3][_BOXES];
 bool enabled[_BOXES];
 bool key_down[_BOXES];
 bool helpBoxShown = false;
-unsigned short textBoxHidden[3];
-unsigned short lastTextBox;
+unsigned short textBoxHidden[3], lastTextBox;
 int lastSize;
 HWND helpBox;
 const HBRUSH BackgroundBrush = CreateSolidBrush(RGB(236,233,216));
 const HFONT DefaultFont = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
 const HFONT HeaderFont = CreateFont(20,0,0,0,FW_DONTCARE,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_OUTLINE_PRECIS, CLIP_DEFAULT_PRECIS,ANTIALIASED_QUALITY, VARIABLE_PITCH,TEXT("Arial"));
 INPUT *keyInput = new INPUT[4];
+DWORD lastMousePress;
+int lastItem;
 
 char keys_string[NORMAL_KEYS_SIZE][13] = {
     "0",
