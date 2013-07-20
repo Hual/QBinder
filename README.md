@@ -3,7 +3,13 @@ QBinder
 
 QBinder - An open-source Windows keybinder, coded in C/++, using the WINAPI
 
+Version: 1.0.2
+
 Features:
+
+    Autocomplete:
+        Added an autocomplete feature - A window shows all the tokens and descriptions on the go, when you
+        press %
 
     Tokens:
   
