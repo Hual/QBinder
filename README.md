@@ -3,7 +3,7 @@ QBinder
 
 QBinder - An open-source Windows keybinder, coded in C/++, using the WINAPI
 
-Version: 1.0.2
+Version: 1.0.3
 
 Features:
 
