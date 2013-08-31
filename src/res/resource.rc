@@ -1,0 +1,32 @@
+#include "resource.h"
+
+ID_ICON ICON "qbinder.ico"
+
+ID_MENU MENU
+BEGIN
+	POPUP "&File"
+    BEGIN
+        MENUITEM "&New", ID_FILE_NEW
+        MENUITEM SEPARATOR
+        MENUITEM "&Save", ID_FILE_SAVE
+        MENUITEM "Save &as...", ID_FILE_SAVE_AS
+        MENUITEM "&Open...", ID_FILE_LOAD
+        MENUITEM SEPARATOR
+        MENUITEM "E&xit", ID_FILE_EXIT
+    END
+    POPUP "&Page"
+    BEGIN
+        MENUITEM "Add New &Page", ID_EDIT_NEWP
+		MENUITEM "&Add Pages...", ID_EDIT_RANGE
+		MENUITEM SEPARATOR
+        MENUITEM "Delete &Current Page", ID_EDIT_DELP
+        MENUITEM "&Delete Pages...", ID_EDIT_DELRANGE
+        MENUITEM SEPARATOR
+        MENUITEM "&Go to Page...", ID_EDIT_GOTO
+    END
+    POPUP "&Tools"
+    BEGIN
+        MENUITEM "Se&ttings...", ID_TOOLS_SETTINGS
+        MENUITEM "&Language... (WIP)", ID_TOOLS_LANGUAGE
+    END
+END
