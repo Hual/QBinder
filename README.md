@@ -3,9 +3,24 @@ QBinder
 
 QBinder - An open-source Windows keybinder, coded in C/++, using the WINAPI
 
-Version: 1.0.3
+Version: 1.1.0
 
 Features:
+
+    Projects:
+        You can now save/load projects that contain your keybinds/keybind details
+
+    Multi-language:
+        Multiple language support (Work in progress)
+
+    Preferences:
+        You can enable/disable features according to your preferences
+
+    Customisation:
+        You can customise your application's appearance
+
+    Pages:
+        The use of pages makes the amount of keybinds you can have virtually unlimited
 
     Autocomplete:
         Added an autocomplete feature - A window shows all the tokens and descriptions on the go, when you
