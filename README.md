@@ -7,6 +7,11 @@ Version: 1.1.0
 
 Features:
 
+    Listens for:
+        Key combinations (shift, alt, ctrl);
+        Media keys;
+        Common keys;
+
     Projects:
         You can now save/load projects that contain your keybinds/keybind details
 
@@ -23,7 +28,7 @@ Features:
         The use of pages makes the amount of keybinds you can have virtually unlimited
 
     Autocomplete:
-        Added an autocomplete feature - A window shows all the tokens and descriptions on the go, when you
+        An autocomplete feature - A window shows all the tokens and descriptions on the go, when you
         press %
 
     Tokens:
@@ -31,23 +36,26 @@ Features:
         Key Tokens:
             Each of these tokens simulates a key being pressed 
                 
-            %e - Represents the Return key
-            %s - Represents the Shift key
-            %b - Represents the Backspace key
-            %t - Represents the Tab key
-            %c - Represents the Control key
-            %a - Represents the Menu/Alt key
-            %l - Represents the Caps Lock key
-            %p - Represents the Escape key
-            %n - Represents the End key
-            %u - Represents the Page Up key
-            %d - Represents the Page Down key
-            %h - Represents the Home key
-            %i - Represents the Insert key
-            %U - Represents the Up Arrow key
-            %D - Represents the Down Arrow key
-            %L - Represents the Left Arrow key
-            %R - Represents the Right Arrow key
+            %e - Press the Return key
+            %s - Press the Left Shift key
+            %S - Press the Right Shift key
+            %b - Press the Backspace key
+            %t - Press the Tab key
+            %c - Press the Left Control key
+            %o - Press the Right Control key
+            %a - Press the Left Menu/Alt key
+            %A - Press the Right Menu/Alt key
+            %l - Press the Caps Lock key
+            %p - Press the Escape key
+            %n - Press the End key
+            %u - Press the Page Up key
+            %d - Press the Page Down key
+            %h - Press the Home key
+            %i - Press the Insert key
+            %U - Press the Up Arrow key
+            %D - Press the Down Arrow key
+            %L - Press the Left Arrow key
+            %R - Press the Right Arrow key
       
         Hold Tokens:
             Each of these tokens simulates a key being held
@@ -68,4 +76,5 @@ Features:
             %fXX - Where XX is a decimal number (1-24) - Presses a Function key (F1-F24)
             %T - Echoes the current local time - Format: hh:mm:ss
             %J - Echoes the current local date - Format: dd/mm/yyy
-      
+            %CXXXX - Sleep for XXXX seconds and resume key press emulation
+            %% - Press %
